@@ -1,0 +1,58 @@
+  version: '3.8'
+  networks:
+    my-overlay-network :
+      driver: overlay
+  services:
+    frontend:
+      image: minhquangit/docker-compose-frontend:latest
+      ports:
+        - "3000:3000"
+      networks:
+        - my-overlay-network 
+      restart: always
+    backend:
+      image: minhquangit/docker-compose-backend:latest
+      ports:
+        - "8080:8080"
+      environment:
+        - SPRING_DATASOURCE_URL=jdbc:mariadb://mariadb:3306/testdb
+        - SPRING_DATASOURCE_USERNAME=root
+        - SPRING_DATASOURCE_PASSWORD=12301
+      networks:
+        - my-overlay-network 
+      depends_on:
+        - mariadb
+      restart: always
+    mariadb:
+      image: mariadb:latest
+      restart: always
+      environment:
+        MARIADB_ROOT_PASSWORD: 123
+        MARIADB_DATABASE: testdb
+      ports:
+        - "3306:3306"
+      volumes:
+        - mariadb-data:/var/lib/mysql
+      healthcheck:
+        test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+        interval: 10s
+        retries: 5
+        start_period: 30s
+        timeout: 5s
+      networks:
+        - my-overlay-network 
+    nginx:
+      image: nginx:latest
+      ports:
+        - "80:80"
+      volumes:
+        - ./nginx.conf:/etc/nginx/nginx.conf
+      depends_on:
+        - frontend
+        - backend
+      networks:
+        - my-overlay-network 
+      restart: always
+
+  volumes:
+    mariadb-data:

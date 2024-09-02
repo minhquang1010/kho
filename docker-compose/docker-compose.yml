@@ -1,0 +1,115 @@
+version: '3.8'
+networks:
+  local-net:
+    driver: overlay
+services:
+  frontend:
+    build:
+      context: ./react-crud-web-api-master
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    networks:
+      - local-net
+    restart: always
+  backend:
+    build:
+      context: ./spring-boot-data-jpa-mysql-master
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mariadb://mariadb:3306/testdb
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=12301
+    networks:
+      - local-net
+    depends_on:
+      - mariadb
+    restart: always
+  mariadb:
+    image: mariadb:latest
+    container_name: mariadb-container
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: 123
+      MARIADB_DATABASE: testdb
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb-data:/var/lib/mariadb
+    networks:
+      - local-net
+  nginx:
+    image: nginx:latest
+    container_name: nginx-container
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - local-net
+    restart: always
+
+volumes:
+  mariadb-data:
+
+#version: '3.8'
+#networks:
+#  local-net:
+#    driver: bridge
+#
+#services:
+#  frontend:
+#    build:
+#      context: ./react-crud-web-api-master
+#      dockerfile: Dockerfile
+#    networks:
+#      - local-net
+#
+#  backend:
+#    build:
+#      context: ./spring-boot-data-jpa-mysql-master
+#    ports:
+#      - "8080:8080"
+#    environment:
+#      - SPRING_DATASOURCE_URL=jdbc:mariadb://mariadb:3306/testdb
+#      - SPRING_DATASOURCE_USERNAME=root
+#      - SPRING_DATASOURCE_PASSWORD=123
+#    networks:
+#      - local-net
+#    depends_on:
+#      - mariadb
+#
+#  mariadb:
+#    image: mariadb:latest
+#    container_name: mariadb-container
+#    restart: always
+#    environment:
+#      MARIADB_ROOT_PASSWORD: 123
+#      MARIADB_DATABASE: testdb
+#    ports:
+#      - "3306:3306"
+#    volumes:
+#      - mariadb-data:/var/lib/mysql
+#    networks:
+#      - local-net
+#
+#  nginx:
+#    image: nginx:alpine
+#    container_name: nginx-container
+#    ports:
+#      - "80:80"
+#    volumes:
+#      - ./react-crud-web-api-master/nginx.conf:/etc/nginx/nginx.conf
+#      - /usr/share/nginx/html
+#    depends_on:
+#      - frontend
+#      - backend
+#    networks:
+#      - local-net
+#
+#volumes:
+#  mariadb-data:
